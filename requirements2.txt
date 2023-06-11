@@ -1,0 +1,12 @@
+spacy
+spacy-model-manager
+pandas
+numpy
+scikit-learn
+jellyfish
+transformers
+beautifulsoup4
+torch
+
+# Luego de instalar spacy y spacy-model-manager, correr en consola con el entorno virtual levantado, el siguiente comando:
+#spacy-model install es_core_news_md

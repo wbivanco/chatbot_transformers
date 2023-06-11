@@ -1,2 +1,4 @@
 # Video 1
 https://www.youtube.com/watch?v=RP2erg2OZYk&list=PLHYgI8nh-KXkTbklJBrvQqASWIwYlrhQ9
+# Video 2
+https://www.youtube.com/watch?v=EoXoTe_YJaU&list=PLHYgI8nh-KXkTbklJBrvQqASWIwYlrhQ9&index=2
