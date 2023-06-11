@@ -4,11 +4,11 @@ import pandas as pd
 import numpy as np
 import re
 import os
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.feature_extraction.text import TfidfVectorizer # Transforma texto a número.
+from sklearn.metrics.pairwise import cosine_similarity # Verifica que tan parecidas son dos palabras.
 import spacy
 nlp = spacy.load('es_core_news_md')
-import jellyfish
+import jellyfish # Compara textos.
 import requests
 import csv
 from docx import Document
@@ -28,6 +28,9 @@ global diccionario_irregulares, documento, lista_frases, lista_frases_normalizad
 #### Tratamiento de los datos.
 ## Función para encontrar la raiz de las palabras.
 def raiz(palabra):
+    # Esta función permite obtener la raiz de un verbo, ya que de esa forma es mas facil ubicra una palabra para el algoritmo,
+    # por ej, comiendo y comeré tiene la misma raíz comer.
+    # Para llevar a cabo esta tarea con verbos en castellano se utiliza scrapping.
     radio = 0
     palabra_encontrada = palabra
     for word in lista_verbos:
@@ -41,7 +44,7 @@ def raiz(palabra):
 def tratamiento_texto(texto):
     trans = str.maketrans('áéíóú', 'aeiou')
     texto = texto.lower()
-    texto = texto.translate(trans)
+    texto = texto.translate(trans) # Saca los acentos de las palabras.
     texto = " ".join(texto.split())
     return texto
 
@@ -54,10 +57,10 @@ def reemplazar_terminacion(palabra):
 
 ## Función para adicionar o eliminar tokens.
 def revisar_tokens(texto, tokens):
-    # La función tiene por objetivo poder destacar un token(palabras llaves) por sobre el resto, pero considerando su 
-    # posibles variaciones, teniendo en cuenta la entrada del usuario.
-    # Esto lo logra por en la salida por verdadero del if, en else elimina todas las palabras que no son utiles y que 
-    # forman parte de la pregunta.
+# La función tiene por objetivo poder destacar un token(palabras llaves) por sobre el resto, pero considerando su 
+# posibles variaciones, teniendo en cuenta la entrada del usuario.
+# Esto lo logra por en la salida por verdadero del if, en else elimina todas las palabras que no son utiles y que 
+# forman parte de la pregunta.
     if len(tokens) == 0:
         if [x for x in ['elprofealejo', 'el profe alejo', 'profe alejo', 'profealejo'] if x in tratamiento_texto(texto)]: tokens.append('elprofealejo')
         elif [x for x in ['cientifico de datos', 'data scientist'] if x in tratamiento_texto(texto)]: tokens.append('datascientist')
@@ -75,7 +78,8 @@ def revisar_tokens(texto, tokens):
 
 ## Función para devolver los tokens normalizados del texto.
 def normalizar(texto):
-    # La función devuelve una lista con las palabras de la frase.
+# Esta función permite eliminar todo aquello que no es util en la frase, solo se queda con verbos, pronombres, adjvetivos, etc.
+# Para ello utiliza NLP que me permite identificar el tipo de palabra dentro de la frase. Además deja los verbos en su forma raiz.
     tokens = []
     tokens = revisar_tokens(texto, tokens)
     if 'elprofealejo' in tokens:
@@ -124,6 +128,7 @@ def normalizar_modelo(texto):
 
 #### Cargar bases de verbos.
 ## Importando verbos en español.
+# Se hace scrapping de un sitio web de donde se obtiene el lsiado de verbos en su base.
 headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36'}
 trans = str.maketrans('áéíóú','aeiou')
 lista_verbos = []
@@ -225,10 +230,13 @@ for columna in df.columns:
 txt_folder_path = 'documentos' # '/content/dialogos' en Google Colab.
 lista_documentos = [x for x in os.listdir(txt_folder_path) if x.endswith(".txt")]
 lista_dialogos, lista_dialogos_respuesta, lista_tipo_dialogo = [], [], []
+# El ciclo for recorre cada uno de los archivos que se encuentran en el directorio de los documentos.
+
 for idx in range(len(lista_documentos)):
     f = open(txt_folder_path+'/'+lista_documentos[idx], 'r', encoding='utf-8', errors='ignore')
     flag, posicion = True, 0
     for line in f.read().split('\n'):
+        # El if permite ir saltando las líneas, ya que las impares son preguntas y las pares son respuestas.
         if flag:
             line = tratamiento_texto(line)
             line = re.sub(r"[^\w\s]", '', line)
@@ -283,13 +291,16 @@ lista_frases_normalizadas = [' '.join(normalizar(x)) for x in lista_frases]
 #### Buscar respuesta del Chatbot.
 ## Función para verificar si el usuário inició un diálogo.
 def dialogo(user_response):
+    # La función permite comparar las frases ingresadas por el usuario y busca la mejor respuesta.
+    # Para ello emplea 3 métodos(intersección, similaridad. Jaro-Winkler) y selecciona la mejor respuesta según la frase.
     user_response = tratamiento_texto(user_response)
     user_response = re.sub(r"[^\w\s]", '', user_response)
     df = df_dialogo.copy()
     vectorizer = TfidfVectorizer()
     dialogos_numero = vectorizer.fit_transform(df_dialogo['dialogo'])
-    respuesta_numero = vectorizer.transform([user_response])
+    respuesta_numero = vectorizer.transform([user_response]) # Transformo lo que ingresa el usuario a vector para poder comparar.
     for idx, row in df.iterrows():
+        # Recorro cada fila del dataframe de dialogos y comparo con lo ingresado por el usuario aplicando los 3 métodos y eligiendo el mejor.
         df.at[idx, 'interseccion'] = len(set(user_response.split()) & set(row['dialogo'].split()))/len(user_response.split())
         df.at[idx, 'similarity'] = cosine_similarity(dialogos_numero[idx], respuesta_numero)[0][0]
         df.at[idx, 'jaro_winkler'] = jellyfish.jaro_winkler(user_response, row['dialogo'])
