@@ -5,7 +5,7 @@ import numpy as np
 import re
 import os
 from sklearn.feature_extraction.text import TfidfVectorizer # Transforma texto a número.
-from sklearn.metrics.pairwise import cosine_similarity # Verifica que tan parecidas son dos palabras.
+from sklearn.metrics.pairwise import cosine_similarity # Verifica que tan parecidas son dos palabras que fueron vectorizadas.
 import spacy
 nlp = spacy.load('es_core_news_md')
 import jellyfish # Compara textos.
@@ -28,9 +28,8 @@ global diccionario_irregulares, documento, lista_frases, lista_frases_normalizad
 #### Tratamiento de los datos.
 ## Función para encontrar la raiz de las palabras.
 def raiz(palabra):
-    # Esta función permite obtener la raiz de un verbo, ya que de esa forma es mas facil ubicra una palabra para el algoritmo,
+    # Esta función permite obtener la raiz de un verbo, ya que de esa forma es más fácil ubicar una palabra para el algoritmo,
     # por ej, comiendo y comeré tiene la misma raíz comer.
-    # Para llevar a cabo esta tarea con verbos en castellano se utiliza scrapping.
     radio = 0
     palabra_encontrada = palabra
     for word in lista_verbos:
@@ -50,16 +49,16 @@ def tratamiento_texto(texto):
 
 ## Función para reemplazar el final de una palabra por 'r'.
 def reemplazar_terminacion(palabra):
-    # La función tiene por objetivo dejar a la palabra en si verbo base.  
+    # La función tiene por objetivo dejar a la palabra en su verbo base.  
     patron = r"(es|me|as|te|ste)$"
     nueva_palabra = re.sub(patron, "r", palabra)
     return nueva_palabra.split()[0]
 
 ## Función para adicionar o eliminar tokens.
 def revisar_tokens(texto, tokens):
-# La función tiene por objetivo poder destacar un token(palabras llaves) por sobre el resto, pero considerando su 
+# La función tiene por objetivo poder destacar uno o más tokens(palabras llaves) por sobre el resto, pero considerando su 
 # posibles variaciones, teniendo en cuenta la entrada del usuario.
-# Esto lo logra por en la salida por verdadero del if, en else elimina todas las palabras que no son utiles y que 
+# Esto lo logra en la salida por verdadero del if, en else elimina todas las palabras que no son utiles y que 
 # forman parte de la pregunta.
     if len(tokens) == 0:
         if [x for x in ['elprofealejo', 'el profe alejo', 'profe alejo', 'profealejo'] if x in tratamiento_texto(texto)]: tokens.append('elprofealejo')
@@ -128,7 +127,7 @@ def normalizar_modelo(texto):
 
 #### Cargar bases de verbos.
 ## Importando verbos en español.
-# Se hace scrapping de un sitio web de donde se obtiene el lsiado de verbos en su base.
+# Para llevar a cabo esta tarea con verbos base en castellano se utiliza scrapping.
 headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36'}
 trans = str.maketrans('áéíóú','aeiou')
 lista_verbos = []
